@@ -2,6 +2,10 @@
 """
 Created on Sun Jun 04 12:15:57 2017
 
+Takes the Company conference call JSON file as input and 
+extracts all the specified executive's answers and writes
+them out to a new JSON file
+
 @author: tomd
 """
 
