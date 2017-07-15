@@ -1,5 +1,10 @@
 #!\Python2.7\python
 
+'''
+Puts Executive Answers into a MongoDB collection
+
+'''
+
 import json
 import sys
 import pandas as pd
@@ -47,29 +52,4 @@ for fname in os.listdir('C://rcDataSets//'):
         print i
 
 
-'''
-
-print (answers)
-#get some reviews by limit
-curAnswer = answers.find({}, {"execName": 1, "execResp": 1, "execRespCount": 1})
-                                #sort("date", pymongo.DESCENDING).limit(521) # set to 521 for live run
-
-reviews = {}
-review =[]
-mylist = []
-
-#loop through the cursor and call the entity extraction API
-for execAns in curAnswer:
-    #print execAns
-    execName = execAns['execName']
-    text = execAns['execResp']#.encode('utf-8')
-    for answer in text:
-        if len(answer) > 350:
-            print answer
-            mylist.append({'execAnswer': answer})
-            df = pd.DataFrame(mylist)
-            df.to_csv('C:\dwDataSets\execAnswers.csv', index=False)
-
-            #print execName, text
-'''
 print ('End of pgm')
