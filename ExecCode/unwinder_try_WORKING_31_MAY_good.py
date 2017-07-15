@@ -2,6 +2,8 @@
 """
 Created on Mon May 22 18:55:47 2017
 
+This is the original working template version DO NOT USE
+
 Input: Conference call transcript in JSON format 
 
 Output: JSON file of the transript splitting Executieve and Analysts
