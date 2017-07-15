@@ -1,4 +1,10 @@
 #!\Python2.7\python
+'''
+
+Gets a random sample of Executive Answers 
+from the MongoDB and writes them out to a CSV file
+
+'''
 
 # import json
 import pandas as pd
