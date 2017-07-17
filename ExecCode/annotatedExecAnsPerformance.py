@@ -65,7 +65,7 @@ print "Repetition" + '\n',  repetition_counts, '\n'
 
 #Open the extracted executive answers 
 path = 'C:\\Users\\tomd\\pda\\textout\\execEach\\'
-fname = "AnnotatedExecAnsers_197a.json"
+fname = "AnnotatedExecAnswers_197.json"
 
 json_data=open(path + fname ).read()
 
