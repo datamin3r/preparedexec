@@ -16,7 +16,7 @@ from collections import defaultdict
 from heapq import nlargest
 
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score
 
 
 import json
@@ -59,9 +59,9 @@ repetition_counts.index = ['Non Repetition', 'Repetition', 'Neutral']
 
 
 
-print "Uncertainty" + '\n',  uncertain_counts# ['Neutral']
-print "Avoidance" + '\n',  avoidance_counts# ['Neutral']
-print "Repetition" + '\n',  repetition_counts# ['Neutral']
+print "Uncertainty" + '\n',  uncertain_counts, '\n'
+print "Avoidance" + '\n',  avoidance_counts, '\n'
+print "Repetition" + '\n',  repetition_counts, '\n'
 
 #Open the extracted executive answers 
 path = 'C:\\Users\\tomd\\pda\\textout\\execEach\\'
@@ -84,9 +84,9 @@ for entry in data: #['execAnswer']:
     docs.append(unidecode(entry['execAnswer']))
     #docs.append(entry['execAnswer'])
 
-print len(docs)
+#print len(docs)
 
-print docs[15]
+#print docs[15]
 
 #set up stop words
 customStopWords=set(stopwords.words('english')+list(punctuation))
@@ -99,7 +99,7 @@ texts = [[word for word in word_tokenize(document.lower()) if word not in custom
 repLens = [len(text) for text in texts]
 
 '''
-For each documents check if the tokens are in the uncertainty list of words 
+For each document check if the tokens are in the uncertainty list of words. 
 If an uncertain word is found then sum the counts and calcualte a measure of 
 uncertainty as a value between 0 and 1 and subtract this from 1. The higher 
 the score the higher the uncertainty
@@ -112,51 +112,74 @@ for i in range(len(repLens)):
         #print token
         if token in lmUcertWords:
             wrdCount +=1
-            print "Uncertain Word: ", token, " - doc id : ", i
+            #print "Uncertain Word: ", token, " - doc id : ", i
     if wrdCount > 0:
         ansList.append(1)
-        print "No. of Uncertain tokens found", wrdCount
-        print "No. Tokens", repLens[i]
+        #print "No. of Uncertain tokens found", wrdCount
+        #print "No. Tokens", repLens[i]
         umsr = 1 - float(repLens[i] - wrdCount)/ repLens[i]
-        print "Uncertainty measure", umsr
-        print "-----------------"
+        #print "Uncertainty measure", umsr
+        #print "-----------------"
         uncert +=1
     else:
         ansList.append(-1)        
-print "Pred Uncert count = ", uncert
-print "Actual Uncertainty" ,  uncertain_counts['Uncertain']  
+#print "Pred Uncert count = ", uncert
+#print "Actual Uncertainty" ,  uncertain_counts['Uncertain']  
 
+# get the actual scores
 uncertActual = [int(token) for token in result['Uncertainty']]
 
-pos = 0
-upos = []
+# create a list of the indices of the actual neutral scores (e.g. = 0)
+j = 0
+actualNeutral = []
 for j in range(len(result['Uncertainty'])): 
     if uncertActual[j] == 0:
-        upos.append(j)
+        actualNeutral.append(j)
         
 '''
-for each item in predicted list if index = upos index then remove that item
-'''        
+ Cretea a new predicted list less the neutral scores.
+ For each item in predicted list if index is not in the list 
+ of nuetral scores then add it to the new list   
+'''
+m = 0
+uncertainPredLess0 = []        
+for m in range(len(ansList)):
+    if m not in actualNeutral:
+        uncertainPredLess0.append(ansList[m])
 
-#upos = [item for item in result['Uncertainty'] if item != 0]
+# create a new list of the actual scores less the neutral socres
+uncertActualLess0 = [item for item in result['Uncertainty'] if item != 0]
 
+# assign for performance metrics
+y_actu = uncertActualLess0
+y_pred = uncertainPredLess0
 
-#uncertActual = [int(token) for token in result['Uncertainty']]
+'''
+Uncertainty Model Performance 
+'''
 
-uncertPred = ansList
+print "\n Confusion Matrix \n"
+print confusion_matrix(y_actu, y_pred), '\n'
 
-y_actu = uncertActual
-y_pred = uncertPred
+accuracy =  accuracy_score(y_actu, y_pred)
 
-print confusion_matrix(y_actu, y_pred)
+print "Accuracy " +'\t', accuracy
 
 ps = precision_score(y_actu, y_pred)
+ 
+print "Precision "+'\t', ps  
 
 rs = recall_score(y_actu, y_pred)
 
-ps = precision_score(y_actu, y_pred)
+print "Recall "+'\t\t', rs
 
 f1 = f1_score(y_actu, y_pred)
+
+print "F1 "+'\t\t', f1
+
+kappa = cohen_kappa_score(y_actu, y_pred)
+
+print "Kappa "+'\t\t', kappa 
 
 #y_actu = pd.Series(uncertActual, name='Actual')
 #y_pred = pd.Series(uncertPred, name='Predicted')
