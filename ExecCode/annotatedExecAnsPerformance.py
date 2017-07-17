@@ -58,7 +58,8 @@ repetition_counts.name = 'Repetition Measures'
 repetition_counts.index = ['Non Repetition', 'Repetition', 'Neutral']
 
 
-
+print "Annotated Answers"
+print "-----------------"
 print "Uncertainty" + '\n',  uncertain_counts, '\n'
 print "Avoidance" + '\n',  avoidance_counts, '\n'
 print "Repetition" + '\n',  repetition_counts, '\n'
@@ -172,29 +173,30 @@ y_pred = uncertainPredLess0
 Uncertainty Model Performance 
 
 '''
-
-print "\n Confusion Matrix \n"
+print "Performance Metrics"
+print "-------------------"
+print "\n Uncertainty Confusion Matrix \n"
 print confusion_matrix(y_actu, y_pred), '\n'
 
 accuracy =  accuracy_score(y_actu, y_pred)
 
-print "Accuracy " +'\t', accuracy
+print "Accuracy " +'\t', "%.2f" % accuracy
 
 ps = precision_score(y_actu, y_pred)
  
-print "Precision "+'\t', ps  
+print "Precision "+'\t', "%.2f" %  ps  
 
 rs = recall_score(y_actu, y_pred)
 
-print "Recall "+'\t\t', rs
+print "Recall "+'\t\t', "%.2f" %  rs
 
 f1 = f1_score(y_actu, y_pred)
 
-print "F1 "+'\t\t', f1
+print "F1 "+'\t\t', "%.2f" %  f1
 
 kappa = cohen_kappa_score(y_actu, y_pred)
 
-print "Kappa "+'\t\t', kappa 
+print "Kappa "+'\t\t', "%.2f" %  kappa, '\n' 
 
 '''
  End of Uncertainity Scores
@@ -223,10 +225,10 @@ for a in range(len(repLens)):
         #ansList.append(1)
         #print "No. of Uncertain tokens found", wrdCount
         #print "No. Tokens", repLens[i]
-        amsr = 1 - float(repLens[i] - wrdCount)/ repLens[a]
+        amsr = 1 - float(repLens[a] - wrdCount)/ repLens[a]
         #print "Uncertainty measure", umsr
         #print "-----------------"
-        if amsr > 0.00:
+        if amsr > 0.01:
             ansAvoidList.append(1)
             #avoid +=1
         else:
@@ -274,23 +276,23 @@ print confusion_matrix(y_actuA, y_predA), '\n'
 
 accuracyA =  accuracy_score(y_actuA, y_predA)
 
-print "Accuracy " +'\t', accuracyA
+print "Accuracy " +'\t', "%.2f" %  accuracyA
 
 psA = precision_score(y_actuA, y_predA)
  
-print "Precision "+'\t', psA  
+print "Precision "+'\t', "%.2f" %  psA  
 
 rsA = recall_score(y_actuA, y_predA)
 
-print "Recall "+'\t\t', rsA
+print "Recall "+'\t\t', "%.2f" %  rsA
 
 f1A = f1_score(y_actuA, y_predA)
 
-print "F1 "+'\t\t', f1A
+print "F1 "+'\t\t', "%.2f" %  f1A
 
 kappaA = cohen_kappa_score(y_actuA, y_predA)
 
-print "Kappa "+'\t\t', kappaA 
+print "Kappa "+'\t\t', "%.2f" %  kappaA 
 
 
 '''
