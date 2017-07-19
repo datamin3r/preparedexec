@@ -13,6 +13,7 @@ print('Folder "{}" will be used to save temporary dictionary and corpus.'.format
 
 from gensim import corpora, models, similarities
 import os
+import io
 import json
 import tempfile
 
@@ -25,6 +26,11 @@ from collections import defaultdict
 from heapq import nlargest
 from unidecode import unidecode
 import pandas as pd
+
+try:
+    doUnicode = unicode
+except NameError:
+    doUnicode = str
 
 
 # read the classified eecutive answers
@@ -125,6 +131,35 @@ index = similarities.MatrixSimilarity(lsi[corpus])
 
 
 #lsi.show_topic(1, topn=15)
+docSentLkup = {}
+sentNdoc = []
+docNsent = []
+
+for targetSent in sentTokens[0]:
+    vec_bow = dictionary.doc2bow(targetSent)
+    vec_lsi = lsi[vec_bow]
+    sims = index[vec_lsi]
+    sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
+    #print targetSent
+    for sentTarget in sims:
+        xs = sentTarget[0]
+        mydoc = sentDocTag[xs][1] 
+        docNsent.append(mydoc)
+        sentNdoc.append(xs)
+            
+docSentLkup['docId'] = docNsent
+docSentLkup['sentId'] = sentNdoc
+
+
+print "docnsnt ", docSentLkup 
+
+with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookup.json', 'w', encoding='utf8' ) as outfile:
+    bonn = json.dumps(docSentLkup, outfile, indent = 4, ensure_ascii=False)
+    outfile.write(doUnicode(bonn))
+
+
+
+'''good
 
 docTest = ['want', 'crystal', 'clear', 'management', 'appointed', 'board', 'full', 'competence', 'board', 'carry', 'forward']
 
@@ -140,6 +175,8 @@ sims = index[vec_lsi]
 sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
 print sims
 
+
+
 docSentLkup = {}
 sentNdoc = []
 docNsent = []
@@ -154,7 +191,7 @@ docSentLkup['sentId'] = sentNdoc
 
 
 print "docnsnt ", docSentLkup 
-
+good'''
 
 
 #print texts[0]
