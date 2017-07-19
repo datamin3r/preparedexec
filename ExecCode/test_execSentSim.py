@@ -7,6 +7,9 @@ Created on Tue Jul 18 19:40:52 2017
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
+import tempfile
+TEMP_FOLDER = tempfile.gettempdir()
+print('Folder "{}" will be used to save temporary dictionary and corpus.'.format(TEMP_FOLDER))
 
 from gensim import corpora, models, similarities
 import os
@@ -57,32 +60,108 @@ for entry in data: #['execAnswer']:
 #print len(docs)
 
 #print docs[0]
+
+
 customStopWords=set(stopwords.words('english')+list(punctuation))
 
-print  customStopWords
+texts = [[word for word in word_tokenize(document.lower()) if word not in customStopWords] 
+        for document in docs]
 
 #sentc = sent_tokenize(docs[0])
 #sentc = [sent_tokenize(doc.lower()) for doc in docs]
-sentc = [[word for word in sent_tokenize(doc.lower()) if word not in customStopWords] 
-        for doc in docs]
+sentc = [sent_tokenize(doc.lower()) for doc in docs]
 
 
 
-print sentc[0][1] 
+sentTokens = [[[ word for word in word_tokenize(wordit) if word not in customStopWords]
+        for docit in sentc 
+        for wordit in docit]] 
+#print "sentence Tokens ", sentTokens
+
+#create lists to hold doccuments and sentences
+sentDoc = []
+docTag = []
+
+i = 0
+for docItem in sentc:
+    i += 1
+    for sentItem in docItem:
+        #print sentItem
+        #print "docit", '\n', i, "sentItem ", sentItem
+        sentDoc.append(sentItem)
+        docTag.append(i)
+        #zipi = [sentDoc + tag]
+        sentDocTag = zip (sentDoc, docTag)
+        
 
 
-#set up stop words
-#customStopWords=set(stopwords.words('english')+list(punctuation))
-#customStopWords=customStopWords=['all', 'just', 'being', '-', 'over', 'both', 'through', 'its', 'before', 'o', '$', 'hadn',  'had', ',', 'should', 'to', 'only', 'won', 'under', 'ours', 'has', '<', 'do', 'very',  'not', 'during', 'now',  'nor', '`', 'd', 'did', '=', 'didn', '^', 'this',  'each', 'further', 'where', '|', 'few', 'because', 'doing', 'some', 'hasn', 'are', 'out', 'what', 'for', '+', 'while', '/', 're', 'does', 'above', 'between', 'mustn', '?', 't', 'who','were', 'here', 'shouldn',  '[', 'by', '_', 'on', 'about', 'couldn', 'of', '&', 'against', 's', 'isn', '(', '{', 'or', 'own', '*', 'into', 'yourself', 'down', 'mightn', 'wasn', '"' ,'from', 'aren', 'there', 'been', '.', 'whom', 'too', 'wouldn', 'weren', 'was', 'until', '\\', 'more',  'that', 'but', ';', '@', 'don', 'with', 'than', 'those', ':', 'ma', 'these', 'up', 'below', 'ain', 'can',  '>', '~', 'and', 've', 'then', 'is','am', 'it', 'doesn', 'an', 'as', 'itself', 'at', 'have', 'in', 'any', 'if', '!', 'again', '%', 'no', ')', 'when','same', 'how', 'other', 'which', 'shan', 'needn', 'haven', 'after', '#', 'most', 'such', ']', 'why', 'a','off', "'", 'm', 'so', 'y', 'the', '}', 'having', 'once']
 
-#create list of tokens for each document 
-#texts = [[word for word in word_tokenize(sentence) if word not in customStopWords] 
-#        for sentence in sentc]
+
+
+#set up dictionary and save it 
+#dictionary = corpora.Dictionary(sentTokens[0])
+#dictionary.save(os.path.join(TEMP_FOLDER, 'execsSententceTokens.dict')) 
+#print(dictionary)
+
+# load saved dictionary and corpus
+dictionary = corpora.Dictionary.load(TEMP_FOLDER + '\execsAnnotatedtext.dict')
+corpus = corpora.MmCorpus(TEMP_FOLDER + '\execsSententceTokens.mm')
+
+# create and save corpus
+#corpus = [dictionary.doc2bow(sentTk) for sentTk in sentTokens[0]]
+#corpora.MmCorpus.serialize(os.path.join(TEMP_FOLDER, 'execsSententceTokens.mm'), corpus)  # store to disk, for later use
+
+# create LSI model with 208 topics
+lsi = models.LsiModel(corpus, id2word=dictionary, num_topics=208)
+
+# transform corpus to LSI space and index it
+index = similarities.MatrixSimilarity(lsi[corpus]) 
+
+#save the index
+#index.save(TEMP_FOLDER + '\execsSententceTokensIndex.index')
+
+#load the saved index
+#index = similarities.MatrixSimilarity.load(TEMP_FOLDER + '\execsSententceTokensIndex.index')
+
+
+#lsi.show_topic(1, topn=15)
+
+docTest = ['want', 'crystal', 'clear', 'management', 'appointed', 'board', 'full', 'competence', 'board', 'carry', 'forward']
+
+vec_bow = dictionary.doc2bow(docTest)
+vec_lsi = lsi[vec_bow] # convert the query to LSI space
+#print(vec_lsi)
+
+#perform query of the test doc against the corpus
+sims = index[vec_lsi]
+#print(list(enumerate(sims)))
+
+#
+sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
+print sims
+
+docSentLkup = {}
+sentNdoc = []
+docNsent = []
+for sentTarget in sims:
+    xs = sentTarget[0]
+    mydoc = sentDocTag[xs][1] 
+    docNsent.append(mydoc)
+    sentNdoc.append(xs)
+
+docSentLkup['docId'] = docNsent
+docSentLkup['sentId'] = sentNdoc
+
+
+print "docnsnt ", docSentLkup 
+
+
 
 #print texts[0]
 
 #number of tokens per documents
 repLens = [len(text) for text in texts]
+repLensR = [len(sentTK) for sentTK in sentTokens[0]]
 
 
 
@@ -94,7 +173,7 @@ repLens = [len(text) for text in texts]
  and calculate the sentance similarity score. The higher the similarity score 
  the higher the indication of a repetition
  '''
-
+'''kkk
 print "----------------"
 ansReptList = []
 #avoid = 0
@@ -145,6 +224,7 @@ actualReptNeutral = []
 for j in range(len(result['Repetition'])): 
     if reptActual[j] == 0:
         actualReptNeutral.append(j)
+kkk'''        
         
 '''
  Create a new predicted list less the neutral scores.
