@@ -254,8 +254,9 @@ for a in range(len(repLens)):
     amsr = 1 - float(repLens[a] - wrdCountA) / repLens[a]
     #print "Amsr", amsr, " doc id ", a
     #print "avoid overall ", ((IvU + FvP) * amsr)
-    if ((IvU + FvP) / (1 + amsr)) < 0.00: #18-JUL
-    #if (float(1/(1+IvU)) + float(1/(1+FvP)) + float(1/(1+amsr)) /3 ) < 0.00: # 19-Jul   
+    if ((IvU + FvP) / (1 + amsr)) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
+    #if ((FvP + amsr) + (1 - IvU)) > 0.00: #19-JUL Acc.67, Pr .46, Rec .24, F1 .31, Kap .13
+    #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) - float(1/(1+amsr))) / 3) ) < 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
         ansAvoidList.append(1)
     else: 
         ansAvoidList.append(-1)
