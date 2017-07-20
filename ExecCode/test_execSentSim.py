@@ -132,37 +132,51 @@ index = similarities.MatrixSimilarity(lsi[corpus])
 
 #lsi.show_topic(1, topn=15)
 docSentLkup = {}
+docSentAll = {}
 sentNdoc = []
 docNsent = []
+sentCosSim = []
+sourceId = []
+
+p = -1
 
 for targetSent in sentTokens[0]:
+    #print targetSent
+    p += 1
     vec_bow = dictionary.doc2bow(targetSent)
     vec_lsi = lsi[vec_bow]
     sims = index[vec_lsi]
     sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
     #print targetSent
-    for sentTarget in sims:
-        xs = sentTarget[0]
+    for sentResult in sims:
+        xs = sentResult[0]
+        cosinSim = sentResult[1]
         mydoc = sentDocTag[xs][1] 
         docNsent.append(mydoc)
         sentNdoc.append(xs)
-            
+        sentCosSim.append(cosinSim)
+        sourceId.append(p)
+        
+        
 docSentLkup['docId'] = docNsent
 docSentLkup['sentId'] = sentNdoc
-
-
-print "docnsnt ", docSentLkup 
-
-with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookup.json', 'w', encoding='utf8' ) as outfile:
-    bonn = json.dumps(docSentLkup, outfile, indent = 4, ensure_ascii=False)
-    outfile.write(doUnicode(bonn))
+docSentLkup['cosinSim'] = str(sentCosSim)
+docSentLkup['sentNo'] = sourceId
+#print "docnsnt ", docSentLkup 
 
 
 
-'''good
+#with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookupwithCosSimTargetSent.json', 'w', encoding='utf8' ) as outfile:
+#    bonn = json.dumps(docSentLkup, outfile, indent = 4, ensure_ascii=False)
+#    outfile.write(doUnicode(bonn))
 
-docTest = ['want', 'crystal', 'clear', 'management', 'appointed', 'board', 'full', 'competence', 'board', 'carry', 'forward']
 
+
+'''good single test
+
+#docTest = ['want', 'crystal', 'clear', 'management', 'appointed', 'board', 'full', 'competence', 'board', 'carry', 'forward']
+
+docTest = ['delever', 'invest', 'behind', 'brands', 'pursue', 'certain', 'opportunities', 'return', 'money', 'shareholders']
 vec_bow = dictionary.doc2bow(docTest)
 vec_lsi = lsi[vec_bow] # convert the query to LSI space
 #print(vec_lsi)
