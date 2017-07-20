@@ -21,11 +21,16 @@ import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
 from nltk.corpus import stopwords
 from string import punctuation
-from nltk.probability import FreqDist
-from collections import defaultdict
-from heapq import nlargest
+#from nltk.probability import FreqDist
+#from collections import defaultdict
+#from heapq import nlargest
 from unidecode import unidecode
-import pandas as pd
+#import pandas as pd
+#import numpy as np
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_curve
+
+
 
 try:
     doUnicode = unicode
@@ -146,27 +151,54 @@ for targetSent in sentTokens[0]:
     vec_bow = dictionary.doc2bow(targetSent)
     vec_lsi = lsi[vec_bow]
     sims = index[vec_lsi]
+    #sorted list of number of similar results
     sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
     #print targetSent
     for sentResult in sims:
-        xs = sentResult[0]
-        cosinSim = sentResult[1]
-        mydoc = sentDocTag[xs][1] 
-        docNsent.append(mydoc)
-        sentNdoc.append(xs)
-        sentCosSim.append(cosinSim)
-        sourceId.append(p)
+        if p - 5 <= sentResult[0] <= p + 5 and sentResult[1] > 0.0: 
+            xs = sentResult[0]
+            cosinSim = sentResult[1]
+            mydoc = sentDocTag[xs][1] 
+            docNsent.append(mydoc)
+            sentNdoc.append(xs)
+            sentCosSim.append(cosinSim)
+            sourceId.append(p)
         
         
 docSentLkup['docId'] = docNsent
-docSentLkup['sentId'] = sentNdoc
+docSentLkup['sentReturned'] = sentNdoc
 docSentLkup['cosinSim'] = str(sentCosSim)
-docSentLkup['sentNo'] = sourceId
+docSentLkup['sentSource'] = sourceId
 #print "docnsnt ", docSentLkup 
 
+srcTarget = [docSentLkup['sentSource'], docSentLkup['sentReturned']]
 
 
-#with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookupwithCosSimTargetSent.json', 'w', encoding='utf8' ) as outfile:
+ansReptListTemp = []
+ansReptList = []
+for i in range(len(srcTarget[0])):
+    #print i
+    if srcTarget[0][i] != srcTarget[1][i]:
+        #print "Src sentence  ", srcTarget[0][i]
+        #print "Is similar to  ", srcTarget[1][i]
+        #print " Doc is Src ", docTag[srcTarget[0][i]], " Result ", docTag[srcTarget[1][i]]
+        if docTag[srcTarget[0][i]] == docTag[srcTarget[1][i]]:
+            #print " this is the doc to we need ", docTag[srcTarget[0][i]]
+            ansReptListTemp.append(docTag[srcTarget[0][i]])
+            
+# populate the answers that are repetitive 1 or -1
+# range is the number of answers (document list of sentences) to be processed 
+for i in range(len(sentc)):
+    if i in ansReptListTemp:
+        ansReptList.append(1)
+    else:
+        ansReptList.append(-1)
+    
+
+#sentparis = zip[for j in docTag if  
+
+
+#with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookupwithCosSimTargetSentLmt2.json', 'w', encoding='utf8' ) as outfile:
 #    bonn = json.dumps(docSentLkup, outfile, indent = 4, ensure_ascii=False)
 #    outfile.write(doUnicode(bonn))
 
@@ -211,8 +243,8 @@ good'''
 #print texts[0]
 
 #number of tokens per documents
-repLens = [len(text) for text in texts]
-repLensR = [len(sentTK) for sentTK in sentTokens[0]]
+#repLens = [len(text) for text in texts]
+#repLensR = [len(sentTK) for sentTK in sentTokens[0]]
 
 
 
@@ -224,47 +256,6 @@ repLensR = [len(sentTK) for sentTK in sentTokens[0]]
  and calculate the sentance similarity score. The higher the similarity score 
  the higher the indication of a repetition
  '''
-'''kkk
-print "----------------"
-ansReptList = []
-#avoid = 0
-for a in range(len(repLens)):
-    wrdCountA = 0
-    youWordCount = 0
-    selfWordCount = 0
-    futureWordCount = 0
-    ppWordCount = 0
-    for token in texts[a]:
-        #print token
-        if token in avoidWords:
-            wrdCountA +=1
-        if token in youWords:
-            youWordCount +=1
-            #print "ywc ", youWordCount
-        if token in selfWords:
-            selfWordCount +=1
-            #print "swc ", selfWordCount
-            #print "Uncertain Word: ", token, " - doc id : ", i
-        if token in futureWords:
-            futureWordCount +=1
-        if token in ppWords:
-            ppWordCount +=1
-    # calcualte future versus present past you measure         
-    FvP =  np.log(float((1 + futureWordCount)) / ((1 + ppWordCount )))
-    #print "FvP ", FvP, futureWordCount, ' ', ppWordCount, " doc id ", a        
-    # calcualte self versus you measure         
-    IvU = np.log(float((1 + selfWordCount)) / ((1 + youWordCount )))
-    #print "IvU ", IvU, selfWordCount, ' ', youWordCount, " doc id ", a 
-    amsr = 1 - float(repLens[a] - wrdCountA) / repLens[a]
-    #print "Amsr", amsr, " doc id ", a
-    #print "avoid overall ", ((IvU + FvP) * amsr)
-    if ((IvU + FvP) * amsr) < 0.00:    
-        ansAvoidList.append(1)
-    else: 
-        ansAvoidList.append(-1)
-
-
-
 
 
 reptActual = [int(token) for token in result['Repetition']]
@@ -274,8 +265,7 @@ j = 0
 actualReptNeutral = []
 for j in range(len(result['Repetition'])): 
     if reptActual[j] == 0:
-        actualReptNeutral.append(j)
-kkk'''        
+        actualReptNeutral.append(j)        
         
 '''
  Create a new predicted list less the neutral scores.
@@ -292,6 +282,40 @@ for m in range(len(ansReptList)):
 reptActualLess0 = [item for item in result['Repetition'] if item != 0]
 
 
+# assign for performance metrics
+y_actu = reptActualLess0
+y_pred = reptPredLess0
 
 
+#Repetition Model Performance 
 
+
+print "Performance Metrics"
+print "-------------------"
+print "\n Repetition Confusion Matrix \n"
+print confusion_matrix(y_actu, y_pred), '\n'
+
+accuracy =  accuracy_score(y_actu, y_pred)
+
+print "Accuracy " +'\t', "%.2f" % accuracy
+
+ps = precision_score(y_actu, y_pred)
+ 
+print "Precision "+'\t', "%.2f" %  ps  
+
+rs = recall_score(y_actu, y_pred)
+
+print "Recall "+'\t\t', "%.2f" %  rs
+
+f1 = f1_score(y_actu, y_pred)
+
+print "F1 "+'\t\t', "%.2f" %  f1
+
+kappa = cohen_kappa_score(y_actu, y_pred)
+
+print "Kappa "+'\t\t', "%.2f" %  kappa, '\n' 
+
+'''
+#End of Repetition Scores
+ 
+'''
