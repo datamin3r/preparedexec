@@ -17,6 +17,7 @@ import io
 import json
 import tempfile
 import pickle
+import pandas as pd
 
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
@@ -50,7 +51,7 @@ repetition_counts.index = ['Non Repetition', 'Repetition', 'Neutral']
 
 unprepared_counts = result['Unprepared'].value_counts()
 unprepared_counts.name = 'Unprepared Measures'
-unprepared_counts.index = ['Unprepared', 'Prepared', 'Neutral']
+unprepared_counts.index = ['Prepared', 'Unprepared', 'Neutral']
 
 
 print "Annotated Answers"
@@ -78,6 +79,14 @@ for entry in data: #['execAnswer']:
 
 #print docs[0]
 
+'''
+ REPETITION
+
+ For each document select the documents sentances.
+ For each sentence compare it every other sentence in the document
+ and calculate the sentance similarity score. The higher the similarity score 
+ the higher the indication of a repetition
+ '''
 
 customStopWords=set(stopwords.words('english')+list(punctuation))
 
@@ -110,9 +119,6 @@ for docItem in sentc:
         #zipi = [sentDoc + tag]
         sentDocTag = zip (sentDoc, docTag)
         
-
-
-
 
 
 #set up dictionary and save it 
@@ -204,68 +210,7 @@ for i in range(len(sentc)):
         ansReptList.append(-1)
         
 
-
-
-#with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookupwithCosSimTargetSentLmt2.json', 'w', encoding='utf8' ) as outfile:
-#    bonn = json.dumps(docSentLkup, outfile, indent = 4, ensure_ascii=False)
-#    outfile.write(doUnicode(bonn))
-
-
-
-'''good single test
-
-#docTest = ['want', 'crystal', 'clear', 'management', 'appointed', 'board', 'full', 'competence', 'board', 'carry', 'forward']
-
-docTest = ['delever', 'invest', 'behind', 'brands', 'pursue', 'certain', 'opportunities', 'return', 'money', 'shareholders']
-vec_bow = dictionary.doc2bow(docTest)
-vec_lsi = lsi[vec_bow] # convert the query to LSI space
-#print(vec_lsi)
-
-#perform query of the test doc against the corpus
-sims = index[vec_lsi]
-#print(list(enumerate(sims)))
-
-#
-sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
-print sims
-
-
-
-docSentLkup = {}
-sentNdoc = []
-docNsent = []
-for sentTarget in sims:
-    xs = sentTarget[0]
-    mydoc = sentDocTag[xs][1] 
-    docNsent.append(mydoc)
-    sentNdoc.append(xs)
-
-docSentLkup['docId'] = docNsent
-docSentLkup['sentId'] = sentNdoc
-
-
-print "docnsnt ", docSentLkup 
-good'''
-
-
-#print texts[0]
-
-#number of tokens per documents
-#repLens = [len(text) for text in texts]
-#repLensR = [len(sentTK) for sentTK in sentTokens[0]]
-
-
-
-'''
- REPETITION
-
- For each document select the documents sentances.
- For each sentence compare it every other sentence in the document
- and calculate the sentance similarity score. The higher the similarity score 
- the higher the indication of a repetition
- '''
-
-
+# get the actual scores
 reptActual = [int(token) for token in result['Repetition']]
 
 # create a list of the indices of the actual neutral scores (e.g. = 0)
@@ -356,8 +301,23 @@ ansList = pickle.load(pkl)
 ansAvoidList = pickle.load(pkl1)
 neutrals = pickle.load(pkl2)
 
+
+#get the actual prepared scores
+# get the actual scores
+unprepActual = [int(token) for token in result['Unprepared']]
+
+# create a list of the indices of the actual neutral scores (e.g. = 0)
+jk = 0
+actualUnprepNeutral = []
+for jk in range(len(result['Unprepared'])): 
+    if unprepActual[jk] == 0:
+        actualUnprepNeutral.append(jk)        
+
+
+
+
 # add the repetition neutrals
-allNeutrals = set(neutrals + actualReptNeutral)
+allNeutrals = set(neutrals + actualReptNeutral + actualUnprepNeutral)
 
 #print len(allNeutrals)
 
@@ -376,14 +336,13 @@ for ix in range(len(ansAvoidList)):
         #print ix
         cleanAnsAvoid.append(ansAvoidList[ix])
     
-
-
 ix = 0    
 cleanAnsRept = []
 for ix in range(len(ansReptList)):
     if ix not in allNeutrals:
         #print ix
         cleanAnsRept.append(ansReptList[ix])
+        
 
 
 pkl.close()
@@ -398,3 +357,71 @@ pkl2.close()
 
 print "-----------------"
 print "Unprepared" + '\n',  unprepared_counts, '\n'
+
+# create a new list of the actual scores less the neutral socres
+#UnprepActualLess0 = [item for item in result['Unprepared'] if item != 0]
+UnprepActual = [item for item in result['Unprepared']]
+
+
+ix = 0    
+cleanAnsUnprep = []
+for ix in range(len(UnprepActual)):
+    if ix not in allNeutrals:
+        #print ix
+        cleanAnsUnprep.append(UnprepActual[ix])
+
+# calculate the Unprepared score 
+# sum the scores for each feature
+
+#do pred counts
+unprepcnt = 0
+prepcnt = 0
+print "Unprepared \n"
+
+unprepList = []
+for u in range(len(cleanAnsUncert)):
+    uncertScore = cleanAnsUncert[u] + cleanAnsAvoid[u] + cleanAnsRept[u] 
+    if uncertScore > 0:
+        unprepcnt +=1
+        unprepList.append(1)
+    else:
+        prepcnt +=1
+        unprepList.append(-1)
+        
+
+# assign for performance metrics
+y_actuUprep = cleanAnsUnprep
+y_predUprep = unprepList
+
+print "Pred Unprepared count = ", unprepcnt
+print "Pred prepared count  =  ", prepcnt, '\n'
+
+print "\n Unprepared Confusion Matrix \n"
+print confusion_matrix(y_actuUprep, y_predUprep), '\n'
+
+accuracy =  accuracy_score(y_actuUprep, y_predUprep)
+
+print "Accuracy " +'\t', "%.2f" % accuracy
+
+ps = precision_score(y_actuUprep, y_predUprep)
+ 
+print "Precision "+'\t', "%.2f" %  ps  
+
+rs = recall_score(y_actuUprep, y_predUprep)
+
+print "Recall "+'\t\t', "%.2f" %  rs
+
+f1 = f1_score(y_actuUprep, y_predUprep)
+
+print "F1 "+'\t\t', "%.2f" %  f1
+
+kappa = cohen_kappa_score(y_actuUprep, y_predUprep)
+
+print "Kappa "+'\t\t', "%.2f" %  kappa, '\n' 
+
+'''
+# End of Unprepared Scores
+ 
+'''
+
+
