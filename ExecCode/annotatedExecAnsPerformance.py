@@ -27,6 +27,7 @@ import codecs
 import io
 from unidecode import unidecode
 import pandas as pd
+import pickle
 
 try:
     doUnicode = unicode
@@ -107,6 +108,7 @@ for entry in data: #['execAnswer']:
 #set up stop words
 #customStopWords=set(stopwords.words('english')+list(punctuation))
 customStopWords=['all', 'just', 'being', '-', 'over', 'both', 'through', 'its', 'before', 'o', '$', 'hadn',  'had', ',', 'should', 'to', 'only', 'won', 'under', 'ours', 'has', '<', 'do', 'very',  'not', 'during', 'now',  'nor', '`', 'd', 'did', '=', 'didn', '^', 'this',  'each', 'further', 'where', '|', 'few', 'because', 'doing', 'some', 'hasn', 'are', 'out', 'what', 'for', '+', 'while', '/', 're', 'does', 'above', 'between', 'mustn', '?', 't', 'who','were', 'here', 'shouldn',  '[', 'by', '_', 'on', 'about', 'couldn', 'of', '&', 'against', 's', 'isn', '(', '{', 'or', 'own', '*', 'into', 'yourself', 'down', 'mightn', 'wasn', '"' ,'from', 'aren', 'there', 'been', '.', 'whom', 'too', 'wouldn', 'weren', 'was', 'until', '\\', 'more',  'that', 'but', ';', '@', 'don', 'with', 'than', 'those', ':', 'ma', 'these', 'up', 'below', 'ain', 'can',  '>', '~', 'and', 've', 'then', 'is','am', 'it', 'doesn', 'an', 'as', 'itself', 'at', 'have', 'in', 'any', 'if', '!', 'again', '%', 'no', ')', 'when','same', 'how', 'other', 'which', 'shan', 'needn', 'haven', 'after', '#', 'most', 'such', ']', 'why', 'a','off', "'", 'm', 'so', 'y', 'the', '}', 'having', 'once']
+#customStopWords=""
 
 #create list of tokens for each document 
 texts = [[word for word in word_tokenize(document.lower()) if word not in customStopWords] 
@@ -126,7 +128,6 @@ repLens = [len(text) for text in texts]
  the score the higher the uncertainty
 '''
 ansList = []
-#uncert = 0
 for i in range(len(repLens)):
     wrdCount = 0
     for token in texts[i]:
@@ -139,17 +140,15 @@ for i in range(len(repLens)):
         #print "No. of Uncertain tokens found", wrdCount
         #print "No. Tokens", repLens[i]
         umsr = 1 - float(repLens[i] - wrdCount)/ repLens[i]
+        #umsr = float(repLens[i] - wrdCount)/ repLens[i]
         #print "Uncertainty measure", umsr
         #print "-----------------"
         if umsr > 0.01:
             ansList.append(1)
-            #uncert +=1
         else:
             ansList.append(-1)
     else:
-        ansList.append(-1)        
-#print "Pred Uncert count = ", uncert
-#print "Actual Uncertainty" ,  uncertain_counts['Uncertain']  
+        ansList.append(-1)
 
 # get the actual scores
 uncertActual = [int(token) for token in result['Uncertainty']]
@@ -175,6 +174,17 @@ for m in range(len(ansList)):
 # create a new list of the actual scores less the neutral socres
 uncertActualLess0 = [item for item in result['Uncertainty'] if item != 0]
 
+#do pred counts
+uncertcnt = 0
+certcnt = 0
+for n in uncertainPredLess0:
+    if n == 1:
+        uncertcnt +=1
+    else:
+        certcnt +=1
+
+
+
 # assign for performance metrics
 y_actu = uncertActualLess0
 y_pred = uncertainPredLess0
@@ -183,8 +193,15 @@ y_pred = uncertainPredLess0
 Uncertainty Model Performance 
 
 '''
-print "Performance Metrics"
 print "-------------------"
+print "Performance Metrics"
+print "-------------------\n"
+print "Uncertainty \n"
+print "Pred Certainty count   = ", certcnt 
+print "Pred Uncertainty count =  ", uncertcnt, '\n'
+#print "Actual Uncertainty" ,  uncertain_counts['Uncertain']  
+
+
 print "\n Uncertainty Confusion Matrix \n"
 print confusion_matrix(y_actu, y_pred), '\n'
 
@@ -221,9 +238,11 @@ print "Kappa "+'\t\t', "%.2f" %  kappa, '\n'
  avoidance as a value between 0 and 1 and subtract this from 1. The higher 
  the score the higher the avoidance
 '''
-print "----------------"
+print "----------------\n"
+print "Avoidance \n"
 ansAvoidList = []
-#avoid = 0
+unavoidcnt = 0
+avoidcnt = 0
 for a in range(len(repLens)):
     wrdCountA = 0
     youWordCount = 0
@@ -253,15 +272,17 @@ for a in range(len(repLens)):
     #print "IvU ", IvU, selfWordCount, ' ', youWordCount, " doc id ", a 
     amsr = 1 - float(repLens[a] - wrdCountA) / repLens[a]
     #print "Amsr", amsr, " doc id ", a
-    #print "avoid overall ", ((IvU + FvP) * amsr)
-    if ((IvU + FvP) / (1 + amsr)) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
+    #pri1nt "avoid overall ", ((IvU + FvP) * amsr)
+    totalAvoid = (amsr + FvP) - IvU
+    #if totalAvoid > 0.00:
+    if float(IvU + FvP) / (1 + amsr) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
     #if ((FvP + amsr) + (1 - IvU)) > 0.00: #19-JUL Acc.67, Pr .46, Rec .24, F1 .31, Kap .13
-    #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) - float(1/(1+amsr))) / 3) ) < 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
+    #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) + float(1/(1+amsr))) / 3) ) < 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
         ansAvoidList.append(1)
+        
     else: 
         ansAvoidList.append(-1)
-
-
+        
 
 '''
     if wrdCountA > 0:
@@ -288,10 +309,10 @@ avoidActual = [int(token) for token in result['Avoidance']]
 
 # create a list of the indices of the actual neutral scores (e.g. = 0)
 aj = 0
-actualAviodNeutral = []
+actualAvoidNeutral = []
 for aj in range(len(result['Avoidance'])): 
     if avoidActual[aj] == 0:
-        actualAviodNeutral.append(aj)
+        actualAvoidNeutral.append(aj)
         
 '''
  Cretea a new predicted list less the neutral scores.
@@ -301,11 +322,20 @@ for aj in range(len(result['Avoidance'])):
 am = 0
 avoidPredLess0 = []        
 for am in range(len(ansAvoidList)):
-    if am not in actualAviodNeutral:
+    if am not in actualAvoidNeutral:
         avoidPredLess0.append(ansAvoidList[am])
 
 # create a new list of the actual scores less the neutral socres
 avoidActualLess0 = [item for item in result['Avoidance'] if item != 0]
+
+#do pred counts
+avoidcnt = 0
+unavoidcnt = 0
+for k in avoidPredLess0:
+    if k == 1:
+        avoidcnt +=1
+    else:
+        unavoidcnt +=1
 
 # assign for performance metrics
 y_actuA = avoidActualLess0
@@ -315,6 +345,9 @@ y_predA = avoidPredLess0
 Avoidance Model Performance 
 
 '''
+
+print "Pred Non Avoidance count =  ", unavoidcnt
+print "Pred Avoidance count     =  ", avoidcnt , '\n'
 
 print "\n Avoidance Confusion Matrix \n"
 print confusion_matrix(y_actuA, y_predA), '\n'
@@ -346,6 +379,28 @@ print "Kappa "+'\t\t', "%.2f" %  kappaA
 '''
 
 
+'''
+ Pickle lists of uncertainty, avoidance
+ neutral counts for use in Unpreparedness combiner
+
+'''
+# combine the neutrals
+neutrals = actualAvoidNeutral + actualNeutral
+print neutrals
+
+
+output = open('C:\\Users\\tomd\\pda\\answerListUncert.pkl', 'wb')
+output1 = open('C:\\Users\\tomd\\pda\\answerListAvoid.pkl', 'wb')
+output2 = open('C:\\Users\\tomd\\pda\\neutrals.pkl', 'wb')
+
+# Pickle dictionary using protocol 0.
+pickle.dump(ansList, output)
+pickle.dump(ansAvoidList, output1)
+pickle.dump(neutrals, output2)
+
+output.close()
+output1.close()
+output2.close()
 
 '''
 fpr, tpr, thresholds = roc_curve(y_actu, y_pred)

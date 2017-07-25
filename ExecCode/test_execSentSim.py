@@ -16,6 +16,7 @@ import os
 import io
 import json
 import tempfile
+import pickle
 
 import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
@@ -45,6 +46,11 @@ result = pd.read_csv('C:\\Users\\tomd\\pda\\classifiedExecAnswers_197_v0.1.csv')
 repetition_counts = result['Repetition'].value_counts()
 repetition_counts.name = 'Repetition Measures'
 repetition_counts.index = ['Non Repetition', 'Repetition', 'Neutral']
+
+
+unprepared_counts = result['Unprepared'].value_counts()
+unprepared_counts.name = 'Unprepared Measures'
+unprepared_counts.index = ['Unprepared', 'Prepared', 'Neutral']
 
 
 print "Annotated Answers"
@@ -188,14 +194,16 @@ for i in range(len(srcTarget[0])):
             
 # populate the answers that are repetitive 1 or -1
 # range is the number of answers (document list of sentences) to be processed 
+
+
 for i in range(len(sentc)):
     if i in ansReptListTemp:
         ansReptList.append(1)
+        
     else:
         ansReptList.append(-1)
-    
+        
 
-#sentparis = zip[for j in docTag if  
 
 
 #with io.open('C:\\Users\\tomd\\pda\\textout\\execEach\\docSentLookupwithCosSimTargetSentLmt2.json', 'w', encoding='utf8' ) as outfile:
@@ -281,6 +289,16 @@ for m in range(len(ansReptList)):
 # create a new list of the actual scores less the neutral socres
 reptActualLess0 = [item for item in result['Repetition'] if item != 0]
 
+#do pred counts
+repcnt = 0
+nonrepcnt = 0
+print "Repetition \n"
+for k in reptPredLess0:
+    if k == 1:
+        repcnt +=1
+    else:
+        nonrepcnt +=1
+        
 
 # assign for performance metrics
 y_actu = reptActualLess0
@@ -292,6 +310,10 @@ y_pred = reptPredLess0
 
 print "Performance Metrics"
 print "-------------------"
+
+print "Pred Non Repetition count = ", nonrepcnt
+print "Pred Repetition count     =  ", repcnt, '\n'
+
 print "\n Repetition Confusion Matrix \n"
 print confusion_matrix(y_actu, y_pred), '\n'
 
@@ -319,3 +341,60 @@ print "Kappa "+'\t\t', "%.2f" %  kappa, '\n'
 #End of Repetition Scores
  
 '''
+
+'''
+Load pickle files to work combiner for Unprepared measures
+
+'''
+
+
+pkl = open('C:\\Users\\tomd\\pda\\answerListUncert.pkl', 'rb')
+pkl1 = open('C:\\Users\\tomd\\pda\\answerListAvoid.pkl', 'rb')
+pkl2 = open('C:\\Users\\tomd\\pda\\neutrals.pkl', 'rb')
+
+ansList = pickle.load(pkl)
+ansAvoidList = pickle.load(pkl1)
+neutrals = pickle.load(pkl2)
+
+# add the repetition neutrals
+allNeutrals = set(neutrals + actualReptNeutral)
+
+#print len(allNeutrals)
+
+# extract the non neutral scores for both 
+ix = 0
+cleanAnsUncert = []
+for ix in range(len(ansList)):
+    if ix not in allNeutrals:
+        #print ix
+        cleanAnsUncert.append(ansList[ix])        
+        
+ix = 0    
+cleanAnsAvoid = []
+for ix in range(len(ansAvoidList)):
+    if ix not in allNeutrals:
+        #print ix
+        cleanAnsAvoid.append(ansAvoidList[ix])
+    
+
+
+ix = 0    
+cleanAnsRept = []
+for ix in range(len(ansReptList)):
+    if ix not in allNeutrals:
+        #print ix
+        cleanAnsRept.append(ansReptList[ix])
+
+
+pkl.close()
+pkl1.close()
+pkl2.close()
+
+
+'''
+ Unprepared measures
+ 
+'''
+
+print "-----------------"
+print "Unprepared" + '\n',  unprepared_counts, '\n'
