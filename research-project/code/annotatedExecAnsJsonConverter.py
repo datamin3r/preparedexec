@@ -5,7 +5,7 @@ Created on Wed Jul 12 12:03:04 2017
 @author: tomd
 
 Script to prepare JSON input 
-AnnotatedExecAnswers_197.json for dowstream
+AnnotatedExecAnswers_197.json for downstream
 model performance evaluation against the annotated 
 classifiedExecAnswers_197_v0.1.csv
 
