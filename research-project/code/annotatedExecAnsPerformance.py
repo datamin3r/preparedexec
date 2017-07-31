@@ -143,7 +143,7 @@ for i in range(len(repLens)):
         #umsr = float(repLens[i] - wrdCount)/ repLens[i]
         #print "Uncertainty measure", umsr
         #print "-----------------"
-        if umsr > 0.00:
+        if umsr > 0.0:
             ansList.append(1)
         else:
             ansList.append(-1)
@@ -267,7 +267,7 @@ for a in range(len(repLens)):
     # calcualte future v present past you measure higher value = more avoiding       
     FvP =  np.log(float((1 + futureWordCount)) / ((1 + ppWordCount )))
     #print "FvP ", FvP, futureWordCount, ' ', ppWordCount, " doc id ", a        
-    # calcualte self ve you measure lower value = less avoiding        
+    # calcualte self v you measure lower value = more avoiding        
     IvU = np.log(float((1 + selfWordCount)) / ((1 + youWordCount )))
     #print "IvU ", IvU, selfWordCount, ' ', youWordCount, " doc id ", a
     # calcualte avoiding words measure higher value = more avoiding
@@ -276,8 +276,10 @@ for a in range(len(repLens)):
     #print "avoid overall ", ((IvU + FvP) * amsr)
     # combiner squares the values to remove negative
     # add avioding and substract non avoiding 
-    totalAvoid = ((amsr**2) + (FvP**2) - (IvU**2))
-    if totalAvoid > 0.00:
+    #totalAvoid = ((amsr**2) + (FvP**2) - (IvU**2))
+    # Probably just using amsr is providing best measure of the 3 on its own!!
+    totalAvoid =  amsr #+ FvP + IvU
+    if totalAvoid > 0.0:
     #if float(IvU + FvP) / (1 + amsr) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
     #if ((FvP + amsr) + (1 - IvU)) > 0.00: #19-JUL Acc.67, Pr .46, Rec .24, F1 .31, Kap .13
     #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) + float(1/(1+amsr))) / 3) ) < 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
@@ -389,7 +391,7 @@ print "Kappa "+'\t\t', "%.2f" %  kappaA
 '''
 # combine the neutrals
 neutrals = actualAvoidNeutral + actualNeutral
-p#rint neutrals
+#print neutrals
 
 
 output = open('C:\\Users\\tomd\\pda\\answerListUncert.pkl', 'wb')
