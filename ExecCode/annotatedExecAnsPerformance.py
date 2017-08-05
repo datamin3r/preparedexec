@@ -4,21 +4,23 @@ Created on Wed Jul 12 12:03:04 2017
 
 @author: tomd
 """
-import logging
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+#import logging
+#logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-import nltk
+#import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.corpus import stopwords
-from string import punctuation
+#from nltk.corpus import stopwords
+#from string import punctuation
 #from nltk.probability import FreqDist
 #from collections import defaultdict
 #from heapq import nlargest
 import numpy as np
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_curve
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score#, roc_curve, precision_recall_curve
 #from scipy.stats import hmean
-#import matplotlib as plt
+#import matplotlib.pyplot as plt
+#from sklearn.metrics import matthews_corrcoef
+
 
 
 import json
@@ -40,7 +42,7 @@ i = 0
 execAns = {}
 resp = []
 
-# read the classified eecutive answers
+# read the classified executive answers
 result = pd.read_csv('C:\\Users\\tomd\\pda\\classifiedExecAnswers_197_v0.1.csv')
 # result_dict = result.to_dict('records')
 
@@ -60,12 +62,17 @@ repetition_counts = result['Repetition'].value_counts()
 repetition_counts.name = 'Repetition Measures'
 repetition_counts.index = ['Non Repetition', 'Repetition', 'Neutral']
 
+unprepared_counts = result['Unprepared'].value_counts()
+unprepared_counts.name = 'Unprepared Measures'
+unprepared_counts.index = ['Prepared', 'Unprepared', 'Neutral']
+
 
 print "Annotated Answers"
 print "-----------------"
 print "Uncertainty" + '\n',  uncertain_counts, '\n'
 print "Avoidance" + '\n',  avoidance_counts, '\n'
 print "Repetition" + '\n',  repetition_counts, '\n'
+print "Unprepared" + '\n',  unprepared_counts, '\n'
 
 #Open the extracted executive answers 
 path = 'C:\\Users\\tomd\\pda\\textout\\execEach\\'
@@ -143,7 +150,7 @@ for i in range(len(repLens)):
         #umsr = float(repLens[i] - wrdCount)/ repLens[i]
         #print "Uncertainty measure", umsr
         #print "-----------------"
-        if umsr > 0.01:
+        if umsr > 0.0:
             ansList.append(1)
         else:
             ansList.append(-1)
@@ -205,6 +212,10 @@ print "Pred Uncertainty count =  ", uncertcnt, '\n'
 print "\n Uncertainty Confusion Matrix \n"
 print confusion_matrix(y_actu, y_pred), '\n'
 
+#mcc = matthews_corrcoef(y_actu, y_pred)
+
+#print "mcc ", mcc
+
 accuracy =  accuracy_score(y_actu, y_pred)
 
 print "Accuracy " +'\t', "%.2f" % accuracy
@@ -264,20 +275,25 @@ for a in range(len(repLens)):
             futureWordCount +=1
         if token in ppWords:
             ppWordCount +=1
-    # calcualte future versus present past you measure         
+    # calcualte future v present past you measure higher value = more avoiding       
     FvP =  np.log(float((1 + futureWordCount)) / ((1 + ppWordCount )))
     #print "FvP ", FvP, futureWordCount, ' ', ppWordCount, " doc id ", a        
-    # calcualte self versus you measure         
+    # calcualte self v you measure lower value = more avoiding        
     IvU = np.log(float((1 + selfWordCount)) / ((1 + youWordCount )))
-    #print "IvU ", IvU, selfWordCount, ' ', youWordCount, " doc id ", a 
+    #print "IvU ", IvU, selfWordCount, ' ', youWordCount, " doc id ", a
+    # calcualte avoiding words measure higher value = more avoiding
     amsr = 1 - float(repLens[a] - wrdCountA) / repLens[a]
     #print "Amsr", amsr, " doc id ", a
-    #pri1nt "avoid overall ", ((IvU + FvP) * amsr)
-    totalAvoid = (amsr + FvP) - IvU
-    #if totalAvoid > 0.00:
-    if float(IvU + FvP) / (1 + amsr) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
+    #print "avoid overall ", ((IvU + FvP) * amsr)
+    # combiner squares the values to remove negative
+    # add avioding and substract non avoiding 
+    #totalAvoid = ((amsr**2) + (FvP**2) - (IvU**2))
+    # Probably just using amsr is providing best measure of the 3 on its own!!
+    totalAvoid =  (amsr + FvP) - IvU
+    if totalAvoid > 0.0:
+    #if float(IvU + FvP) / (1 + amsr) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
     #if ((FvP + amsr) + (1 - IvU)) > 0.00: #19-JUL Acc.67, Pr .46, Rec .24, F1 .31, Kap .13
-    #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) + float(1/(1+amsr))) / 3) ) < 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
+    #if (float((float(1/(1-IvU)) + float(1/(1-FvP)) + float(1/(1-amsr))) / 3) ) > 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
         ansAvoidList.append(1)
         
     else: 
@@ -352,6 +368,10 @@ print "Pred Avoidance count     =  ", avoidcnt , '\n'
 print "\n Avoidance Confusion Matrix \n"
 print confusion_matrix(y_actuA, y_predA), '\n'
 
+#mccA = matthews_corrcoef(y_actuA, y_predA)
+
+#print "mccA ", mccA
+
 accuracyA =  accuracy_score(y_actuA, y_predA)
 
 print "Accuracy " +'\t', "%.2f" %  accuracyA
@@ -386,7 +406,7 @@ print "Kappa "+'\t\t', "%.2f" %  kappaA
 '''
 # combine the neutrals
 neutrals = actualAvoidNeutral + actualNeutral
-print neutrals
+#print neutrals
 
 
 output = open('C:\\Users\\tomd\\pda\\answerListUncert.pkl', 'wb')
@@ -405,14 +425,14 @@ output2.close()
 '''
 fpr, tpr, thresholds = roc_curve(y_actu, y_pred)
 
-def plot_roc_curve(fpr, tpr, lable=None):
-    plt.plot(fpr,tpr, linewidth=2, lable=label)
+def plot_roc_curve(fpr, tpr, label=None):
+    plt.plot(fpr,tpr, linewidth=2, label=label)
     plt.plot([0,1,[0,1], 'k--'])
     plt.axis([0,1,0,1])
     plt.xlabel('F Pos Rate')
     plt.ylabel('T Pos Rate')
     
-plot_roc_curve(fpr.tpr)
+plot_roc_curve(fpr, tpr)
 plt.show()
 '''
 #y_actu = pd.Series(uncertActual, name='Actual')
