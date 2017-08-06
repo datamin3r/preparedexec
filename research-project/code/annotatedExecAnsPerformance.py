@@ -4,27 +4,29 @@ Created on Wed Jul 12 12:03:04 2017
 
 @author: tomd
 """
-import logging
-logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+#import logging
+#logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
-import nltk
+#import nltk
 from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.corpus import stopwords
-from string import punctuation
+#from nltk.corpus import stopwords
+#from string import punctuation
 #from nltk.probability import FreqDist
 #from collections import defaultdict
 #from heapq import nlargest
 import numpy as np
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score, roc_curve
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, cohen_kappa_score#, roc_curve, precision_recall_curve
 #from scipy.stats import hmean
-#import matplotlib as plt
+#import matplotlib.pyplot as plt
+#from sklearn.metrics import matthews_corrcoef
+
 
 
 import json
 import sys
 import codecs
-import io
+#import io
 from unidecode import unidecode
 import pandas as pd
 import pickle
@@ -40,7 +42,7 @@ i = 0
 execAns = {}
 resp = []
 
-# read the classified eecutive answers
+# read the classified executive answers
 result = pd.read_csv('C:\\Users\\tomd\\pda\\classifiedExecAnswers_197_v0.1.csv')
 # result_dict = result.to_dict('records')
 
@@ -60,12 +62,17 @@ repetition_counts = result['Repetition'].value_counts()
 repetition_counts.name = 'Repetition Measures'
 repetition_counts.index = ['Non Repetition', 'Repetition', 'Neutral']
 
+unprepared_counts = result['Unprepared'].value_counts()
+unprepared_counts.name = 'Unprepared Measures'
+unprepared_counts.index = ['Prepared', 'Unprepared', 'Neutral']
+
 
 print "Annotated Answers"
 print "-----------------"
 print "Uncertainty" + '\n',  uncertain_counts, '\n'
 print "Avoidance" + '\n',  avoidance_counts, '\n'
 print "Repetition" + '\n',  repetition_counts, '\n'
+print "Unprepared" + '\n',  unprepared_counts, '\n'
 
 #Open the extracted executive answers 
 path = 'C:\\Users\\tomd\\pda\\textout\\execEach\\'
@@ -107,7 +114,7 @@ for entry in data: #['execAnswer']:
 
 #set up stop words
 #customStopWords=set(stopwords.words('english')+list(punctuation))
-customStopWords=['all', 'just', 'being', '-', 'over', 'both', 'through', 'its', 'before', 'o', '$', 'hadn',  'had', ',', 'should', 'to', 'only', 'won', 'under', 'ours', 'has', '<', 'do', 'very',  'not', 'during', 'now',  'nor', '`', 'd', 'did', '=', 'didn', '^', 'this',  'each', 'further', 'where', '|', 'few', 'because', 'doing', 'some', 'hasn', 'are', 'out', 'what', 'for', '+', 'while', '/', 're', 'does', 'above', 'between', 'mustn', '?', 't', 'who','were', 'here', 'shouldn',  '[', 'by', '_', 'on', 'about', 'couldn', 'of', '&', 'against', 's', 'isn', '(', '{', 'or', 'own', '*', 'into', 'yourself', 'down', 'mightn', 'wasn', '"' ,'from', 'aren', 'there', 'been', '.', 'whom', 'too', 'wouldn', 'weren', 'was', 'until', '\\', 'more',  'that', 'but', ';', '@', 'don', 'with', 'than', 'those', ':', 'ma', 'these', 'up', 'below', 'ain', 'can',  '>', '~', 'and', 've', 'then', 'is','am', 'it', 'doesn', 'an', 'as', 'itself', 'at', 'have', 'in', 'any', 'if', '!', 'again', '%', 'no', ')', 'when','same', 'how', 'other', 'which', 'shan', 'needn', 'haven', 'after', '#', 'most', 'such', ']', 'why', 'a','off', "'", 'm', 'so', 'y', 'the', '}', 'having', 'once']
+customStopWords=['all', 'just', 'being', '-', 'over', 'both', 'through', 'its', 'before', 'o', '$', 'hadn',  'had', ',', 'should', 'to', 'only', 'won', 'under', 'has', '<', 'do', 'very',  'not', 'during', 'now',  'nor', '`', 'd', 'did', '=', 'didn', '^', 'this',  'each', 'further', 'where', '|', 'few', 'because', 'doing', 'some', 'hasn', 'are', 'out', 'what', 'for', '+', 'while', '/', 're', 'does', 'above', 'between', 'mustn', '?', 't', 'who','were', 'here', 'shouldn',  '[', 'by', '_', 'on', 'about', 'couldn', 'of', '&', 'against', 's', 'isn', '(', '{', 'or', 'own', '*', 'into', 'down', 'mightn', 'wasn', '"' ,'from', 'aren', 'there', 'been', '.', 'whom', 'too', 'wouldn', 'weren', 'was', 'until', '\\', 'more',  'that', 'but', ';', '@', 'don', 'with', 'than', 'those', ':', 'ma', 'these', 'up', 'below', 'ain', 'can',  '>', '~', 'and', 've', 'then', 'is','am', 'it', 'doesn', 'an', 'as', 'itself', 'at', 'have', 'in', 'any', 'if', '!', 'again', '%', 'no', ')', 'when','same', 'how', 'other', 'which', 'shan', 'needn', 'haven', 'after', '#', 'most', 'such', ']', 'why', 'a','off', "'", 'm', 'so', 'y', 'the', '}', 'having', 'once']
 #customStopWords=""
 
 #create list of tokens for each document 
@@ -205,6 +212,10 @@ print "Pred Uncertainty count =  ", uncertcnt, '\n'
 print "\n Uncertainty Confusion Matrix \n"
 print confusion_matrix(y_actu, y_pred), '\n'
 
+#mcc = matthews_corrcoef(y_actu, y_pred)
+
+#print "mcc ", mcc
+
 accuracy =  accuracy_score(y_actu, y_pred)
 
 print "Accuracy " +'\t', "%.2f" % accuracy
@@ -278,11 +289,11 @@ for a in range(len(repLens)):
     # add avioding and substract non avoiding 
     #totalAvoid = ((amsr**2) + (FvP**2) - (IvU**2))
     # Probably just using amsr is providing best measure of the 3 on its own!!
-    totalAvoid =  amsr #+ FvP + IvU
+    totalAvoid =  (amsr + FvP) - IvU
     if totalAvoid > 0.0:
     #if float(IvU + FvP) / (1 + amsr) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
     #if ((FvP + amsr) + (1 - IvU)) > 0.00: #19-JUL Acc.67, Pr .46, Rec .24, F1 .31, Kap .13
-    #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) + float(1/(1+amsr))) / 3) ) < 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
+    #if (float((float(1/(1-IvU)) + float(1/(1-FvP)) + float(1/(1-amsr))) / 3) ) > 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
         ansAvoidList.append(1)
         
     else: 
@@ -357,6 +368,10 @@ print "Pred Avoidance count     =  ", avoidcnt , '\n'
 print "\n Avoidance Confusion Matrix \n"
 print confusion_matrix(y_actuA, y_predA), '\n'
 
+#mccA = matthews_corrcoef(y_actuA, y_predA)
+
+#print "mccA ", mccA
+
 accuracyA =  accuracy_score(y_actuA, y_predA)
 
 print "Accuracy " +'\t', "%.2f" %  accuracyA
@@ -410,14 +425,14 @@ output2.close()
 '''
 fpr, tpr, thresholds = roc_curve(y_actu, y_pred)
 
-def plot_roc_curve(fpr, tpr, lable=None):
-    plt.plot(fpr,tpr, linewidth=2, lable=label)
+def plot_roc_curve(fpr, tpr, label=None):
+    plt.plot(fpr,tpr, linewidth=2, label=label)
     plt.plot([0,1,[0,1], 'k--'])
     plt.axis([0,1,0,1])
     plt.xlabel('F Pos Rate')
     plt.ylabel('T Pos Rate')
     
-plot_roc_curve(fpr.tpr)
+plot_roc_curve(fpr, tpr)
 plt.show()
 '''
 #y_actu = pd.Series(uncertActual, name='Actual')

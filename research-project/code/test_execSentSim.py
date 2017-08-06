@@ -40,7 +40,7 @@ except NameError:
     doUnicode = str
 
 
-# read the classified eecutive answers
+# read the classified executive answers
 result = pd.read_csv('C:\\Users\\tomd\\pda\\classifiedExecAnswers_197_v0.1.csv')
 
 
@@ -89,16 +89,15 @@ for entry in data: #['execAnswer']:
  '''
 
 customStopWords=set(stopwords.words('english')+list(punctuation))
-
-texts = [[word for word in word_tokenize(document.lower()) if word not in customStopWords] 
-        for document in docs]
+#texts = [[word for word in word_tokenize(document.lower()) if word not in customStopWords] 
+#        for document in docs]
 
 #sentc = sent_tokenize(docs[0])
 #sentc = [sent_tokenize(doc.lower()) for doc in docs]
+# sentence tokenise the answers
 sentc = [sent_tokenize(doc.lower()) for doc in docs]
 
-
-
+# tokenise the sentences
 sentTokens = [[[ word for word in word_tokenize(wordit) if word not in customStopWords]
         for docit in sentc 
         for wordit in docit]] 
@@ -117,6 +116,7 @@ for docItem in sentc:
         sentDoc.append(sentItem)
         docTag.append(i)
         #zipi = [sentDoc + tag]
+        # tuple of the sentence and the doc it belongs to
         sentDocTag = zip (sentDoc, docTag)
         
 
@@ -126,19 +126,21 @@ for docItem in sentc:
 #dictionary.save(os.path.join(TEMP_FOLDER, 'execsSententceTokens.dict')) 
 #print(dictionary)
 
-# load saved dictionary and corpus
-dictionary = corpora.Dictionary.load(TEMP_FOLDER + '\execsAnnotatedtext.dict')
-corpus = corpora.MmCorpus(TEMP_FOLDER + '\execsSententceTokens.mm')
 
 # create and save corpus
 #corpus = [dictionary.doc2bow(sentTk) for sentTk in sentTokens[0]]
 #corpora.MmCorpus.serialize(os.path.join(TEMP_FOLDER, 'execsSententceTokens.mm'), corpus)  # store to disk, for later use
 
-# create LSI model with 208 topics
-lsi = models.LsiModel(corpus, id2word=dictionary, num_topics=208)
+# load saved dictionary and corpus
+dictionary = corpora.Dictionary.load(TEMP_FOLDER + '\execsAnnotatedtext.dict')
+corpus = corpora.MmCorpus(TEMP_FOLDER + '\execsSententceTokens.mm')
+
+
+# create LSI model with 250 topics
+lsi = models.LsiModel(corpus, id2word=dictionary, num_topics=250)
 
 # transform corpus to LSI space and index it
-index = similarities.MatrixSimilarity(lsi[corpus]) 
+index = similarities.MatrixSimilarity(lsi[corpus])#, num_features=208) 
 
 #save the index
 #index.save(TEMP_FOLDER + '\execsSententceTokensIndex.index')
@@ -157,17 +159,20 @@ sourceId = []
 
 p = -1
 
+# sentence in sentences
 for targetSent in sentTokens[0]:
     #print targetSent
     p += 1
     vec_bow = dictionary.doc2bow(targetSent)
     vec_lsi = lsi[vec_bow]
     sims = index[vec_lsi]
-    #sorted list of number of similar results
+    #sorted list of number of 5 most similar results
     sims = sorted(enumerate(sims), key = lambda item: -item[1]) [:5]
     #print targetSent
     for sentResult in sims:
-        if p - 5 <= sentResult[0] <= p + 5 and sentResult[1] > 0.0: 
+        # sentence window bewteen -5 and + 5 of the source sentence 
+        if p - 5 <= sentResult[0] <= p + 5 and sentResult[1] > 0.0:
+            #print " p ", p, "sentRslt " ,sentResult[0]
             xs = sentResult[0]
             cosinSim = sentResult[1]
             mydoc = sentDocTag[xs][1] 
@@ -183,29 +188,29 @@ docSentLkup['cosinSim'] = str(sentCosSim)
 docSentLkup['sentSource'] = sourceId
 #print "docnsnt ", docSentLkup 
 
+# list of source and similar returned sentences
 srcTarget = [docSentLkup['sentSource'], docSentLkup['sentReturned']]
 
-
+# get the answers with similar sentences
 ansReptListTemp = []
 ansReptList = []
 for i in range(len(srcTarget[0])):
     #print i
+    # not the same sentence
     if srcTarget[0][i] != srcTarget[1][i]:
         #print "Src sentence  ", srcTarget[0][i]
         #print "Is similar to  ", srcTarget[1][i]
         #print " Doc is Src ", docTag[srcTarget[0][i]], " Result ", docTag[srcTarget[1][i]]
+        # but is the same document
         if docTag[srcTarget[0][i]] == docTag[srcTarget[1][i]]:
             #print " this is the doc to we need ", docTag[srcTarget[0][i]]
             ansReptListTemp.append(docTag[srcTarget[0][i]])
             
 # populate the answers that are repetitive 1 or -1
 # range is the number of answers (document list of sentences) to be processed 
-
-
 for i in range(len(sentc)):
     if i in ansReptListTemp:
         ansReptList.append(1)
-        
     else:
         ansReptList.append(-1)
         
@@ -302,7 +307,7 @@ ansAvoidList = pickle.load(pkl1)
 neutrals = pickle.load(pkl2)
 
 
-#get the actual prepared scores
+# get the actual prepared scores
 # get the actual scores
 unprepActual = [int(token) for token in result['Unprepared']]
 
