@@ -2,7 +2,10 @@
 """
 Created on Wed Jul 12 12:03:04 2017
 
-@author: tomd
+Working Version 1.0
+
+@author: tom.donoghue@gmail.com
+
 """
 #import logging
 #logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -74,7 +77,7 @@ print "Avoidance" + '\n',  avoidance_counts, '\n'
 print "Repetition" + '\n',  repetition_counts, '\n'
 print "Unprepared" + '\n',  unprepared_counts, '\n'
 
-#Open the extracted executive answers 
+#Open the unlabelled extracted executive answers 
 path = 'C:\\Users\\tomd\\pda\\textout\\execEach\\'
 fname = "AnnotatedExecAnswers_197.json"
 
@@ -114,6 +117,7 @@ for entry in data: #['execAnswer']:
 
 #set up stop words
 #customStopWords=set(stopwords.words('english')+list(punctuation))
+# custom edit of nltk stopwords with the words from the word lists removed 
 customStopWords=['all', 'just', 'being', '-', 'over', 'both', 'through', 'its', 'before', 'o', '$', 'hadn',  'had', ',', 'should', 'to', 'only', 'won', 'under', 'has', '<', 'do', 'very',  'not', 'during', 'now',  'nor', '`', 'd', 'did', '=', 'didn', '^', 'this',  'each', 'further', 'where', '|', 'few', 'because', 'doing', 'some', 'hasn', 'are', 'out', 'what', 'for', '+', 'while', '/', 're', 'does', 'above', 'between', 'mustn', '?', 't', 'who','were', 'here', 'shouldn',  '[', 'by', '_', 'on', 'about', 'couldn', 'of', '&', 'against', 's', 'isn', '(', '{', 'or', 'own', '*', 'into', 'down', 'mightn', 'wasn', '"' ,'from', 'aren', 'there', 'been', '.', 'whom', 'too', 'wouldn', 'weren', 'was', 'until', '\\', 'more',  'that', 'but', ';', '@', 'don', 'with', 'than', 'those', ':', 'ma', 'these', 'up', 'below', 'ain', 'can',  '>', '~', 'and', 've', 'then', 'is','am', 'it', 'doesn', 'an', 'as', 'itself', 'at', 'have', 'in', 'any', 'if', '!', 'again', '%', 'no', ')', 'when','same', 'how', 'other', 'which', 'shan', 'needn', 'haven', 'after', '#', 'most', 'such', ']', 'why', 'a','off', "'", 'm', 'so', 'y', 'the', '}', 'having', 'once']
 #customStopWords=""
 
@@ -282,18 +286,19 @@ for a in range(len(repLens)):
     IvU = np.log(float((1 + selfWordCount)) / ((1 + youWordCount )))
     #print "IvU ", IvU, selfWordCount, ' ', youWordCount, " doc id ", a
     # calcualte avoiding words measure higher value = more avoiding
-    amsr = 1 - float(repLens[a] - wrdCountA) / repLens[a]
+    amsr = 1 - float(repLens[a] - wrdCountA) / repLens[a] 
     #print "Amsr", amsr, " doc id ", a
     #print "avoid overall ", ((IvU + FvP) * amsr)
     # combiner squares the values to remove negative
     # add avioding and substract non avoiding 
     #totalAvoid = ((amsr**2) + (FvP**2) - (IvU**2))
     # Probably just using amsr is providing best measure of the 3 on its own!!
-    totalAvoid =  (amsr + FvP) - IvU
+    #totalAvoid =  (amsr + FvP) - IvU
+    totalAvoid =  (FvP - IvU) + amsr
     if totalAvoid > 0.0:
     #if float(IvU + FvP) / (1 + amsr) < 0.00: #18-JUL Acc.55, Pr .34, Rec .45, F1 .39, Kap .05
     #if ((FvP + amsr) + (1 - IvU)) > 0.00: #19-JUL Acc.67, Pr .46, Rec .24, F1 .31, Kap .13
-    #if (float((float(1/(1-IvU)) + float(1/(1-FvP)) + float(1/(1-amsr))) / 3) ) > 0.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
+    #if (float((float(1/(1+IvU)) + float(1/(1+FvP)) + float(1/(1+amsr))) / 3) ) > 1.00: # 19-Jul Acc.50, Pr .29, Rec .41, F1 .34, Kap -.04   
         ansAvoidList.append(1)
         
     else: 

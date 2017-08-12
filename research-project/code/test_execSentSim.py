@@ -384,9 +384,9 @@ prepcnt = 0
 print "Unprepared \n"
 
 unprepList = []
-for u in range(len(cleanAnsUncert)):
-    uncertScore = cleanAnsUncert[u] + cleanAnsAvoid[u] + cleanAnsRept[u] 
-    if uncertScore > 0:
+for u in range(len(cleanAnsUnprep)):
+    unPrepScore = cleanAnsUncert[u] + cleanAnsAvoid[u] + cleanAnsRept[u] 
+    if unPrepScore > 0:
         unprepcnt +=1
         unprepList.append(1)
     else:
