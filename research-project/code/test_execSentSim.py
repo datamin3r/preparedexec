@@ -2,7 +2,7 @@
 """
 Created on Tue Jul 18 19:40:52 2017
 
-@author: tomd
+@author: tom.donoghue@gmail.com
 """
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
