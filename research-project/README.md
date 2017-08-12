@@ -1,6 +1,6 @@
-#Research Area
+# Research Area
 
-This contains the data and python source files for MSc Data Analytics research project:
+This section contains the data and python source files for MSc Data Analytics research project:
 
 The Prepared Executive: A Linguistic Exploration of Executive Answers in the Q&A Section of  Earnings Calls 
 
