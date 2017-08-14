@@ -3,6 +3,7 @@
 Created on Tue Jul 18 19:40:52 2017
 
 @author: tom.donoghue@gmail.com
+
 """
 import logging
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -61,7 +62,7 @@ print "Repetition" + '\n',  repetition_counts, '\n'
 
 #Open the extracted executive answers 
 path = 'C:\\Users\\tomd\\pda\\textout\\execEach\\'
-fname = "AnnotatedExecAnswers_197.json"
+fname = "UnAnnotatedExecAnswers_197.json"
 
 json_data=open(path + fname ).read()
 
