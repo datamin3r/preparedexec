@@ -8,4 +8,4 @@ Earnings calls provide a stage for senior executives to present information to f
 
 [code](./research-project/code#code-area) - Code required to execute the application   
 
-[data](./research-project/data#data-area/) - Data required to execute the application 
+[data](./research-project/data#data-area) - Data required to execute the application 
