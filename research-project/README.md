@@ -9,3 +9,6 @@ Earnings calls provide a stage for senior executives to present information to f
 [code](./code/#code-area) - Code required to execute the application   research-project/code#code-area
 
 [data](./data/README.md#data-area) - Data required to execute the application 
+
+"The Prepared Executive" document above contains an appendix which describes the configuration and process to follow to recreate the study's
+environment, preparation of data, creating the sample spreadsheet of executive answers for annotation, executing the models to evaluate their performance.
