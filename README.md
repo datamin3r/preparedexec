@@ -1,4 +1,4 @@
-# QandA
+# The Prepared Executive
 
 MSc in Data Analytics
 
